@@ -50,7 +50,7 @@ button:active{background:#ffffff45;transform:scale(.96)}
     <button id="start">ابدأ القيادة</button>
   </div>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r161/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
 <script>
 (() => {
 const scene=new THREE.Scene();
@@ -68,26 +68,21 @@ scene.add(new THREE.HemisphereLight(0xddeeff,0x56604c,1.7));
 const sun=new THREE.DirectionalLight(0xffffff,2.2); sun.position.set(60,100,40); sun.castShadow=true; scene.add(sun);
 
 const mat=(c)=>new THREE.MeshStandardMaterial({color:c,roughness:.82});
-const roadMat=mat(0x25282b), sideMat=mat(0xbbb7aa), grassMat=mat(0x6f875f);
-const white=mat(0xf2f2ee), dark=mat(0x17191c);
+const dark=mat(0x17191c);
 
 function box(x,y,z,c,px,py,pz){
   const m=new THREE.Mesh(new THREE.BoxGeometry(x,y,z),mat(c));
   m.position.set(px,py,pz); m.castShadow=true;m.receiveShadow=true;scene.add(m);return m;
 }
-// ground
 box(260,.2,260,0x7b9368,0,-.15,0);
 
-// city grid
 for(let i=-100;i<=100;i+=40){
   box(16,.25,240,0x292c30,i,.02,0);
   box(240,.25,16,0x292c30,0,.03,i);
 }
 for(let i=-100;i<=100;i+=40){
   for(let j=-100;j<=100;j+=40){
-    // sidewalks
     box(19,.28,19,0xb9b5aa,i,.03,j);
-    // building on alternating blocks
     if(((i/40+j/40)&1)===0){
       const h=8+Math.abs((i*j)%18);
       box(15,h,15,[0xd9d0c2,0xc8d2d9,0xe0c7a9,0xbfc8b7][Math.abs(i+j)%4],i,h/2,j);
@@ -95,19 +90,16 @@ for(let i=-100;i<=100;i+=40){
     }
   }
 }
-// road markings
 for(let i=-100;i<=100;i+=40){
   for(let k=-110;k<110;k+=12) box(.35,.03,6,0xe9e2b5,i,.18,k);
   for(let k=-110;k<110;k+=12) box(6,.03,.35,0xe9e2b5,k,.19,i);
 }
-// lamps
 function lamp(x,z){
   box(.25,5,.25,dark,x,2.5,z);
   const l=new THREE.PointLight(0xffe5a0,0.5,14);l.position.set(x,5,z);scene.add(l);
 }
 for(let x=-100;x<=100;x+=40) for(let z=-100;z<=100;z+=40){lamp(x+9,z+9);}
 
-// car
 const car=new THREE.Group(); scene.add(car); car.position.set(0,1,70);
 const body=box(3.2,.9,6,0xd92828,0,0,0); body.position.set(0,0,0); car.add(body);
 const cabin=box(2.5,1.05,2.7,0x1a2530,0,.85,.25); car.add(cabin);
@@ -115,11 +107,9 @@ for(const x of [-1.62,1.62]) for(const z of [-2,2]){
   const w=new THREE.Mesh(new THREE.CylinderGeometry(.48,.48,.35,18),dark);
   w.rotation.z=Math.PI/2; w.position.set(x,-.25,z);w.castShadow=true;car.add(w);
 }
-const lightMat=mat(0xfff0b0);
 box(.8,.25,.1,0xfff3c2,-.85,.05,-3.02).position.y=.05;
 box(.8,.25,.1,0xfff3c2,.85,.05,-3.02).position.y=.05;
 
-// collectibles
 const coins=[];
 for(let n=0;n<18;n++){
  const a=new THREE.Mesh(new THREE.TorusGeometry(.65,.18,10,20),mat(0xffc928));
@@ -134,8 +124,6 @@ function bind(id,key){
  ["pointerup","pointercancel","pointerleave","touchend"].forEach(ev=>b.addEventListener(ev,e=>{e.preventDefault();keys[key]=false},{passive:false}));
 }
 bind("left","left");bind("right","right");bind("gas","gas");bind("brake","brake");
-addEventListener("keydown",e=>{if(e.key==="ArrowLeft"||e.key==="a")keys.left=true;if(e.key==="ArrowRight"||e.key==="d")keys.right=true;if(e.key==="ArrowUp"||e.key==="w")keys.gas=true;if(e.key==="ArrowDown"||e.key==="s")keys.brake=true});
-addEventListener("keyup",e=>{if(e.key==="ArrowLeft"||e.key==="a")keys.left=false;if(e.key==="ArrowRight"||e.key==="d")keys.right=false;if(e.key==="ArrowUp"||e.key==="w")keys.gas=false;if(e.key==="ArrowDown"||e.key==="s")keys.brake=false});
 
 let speed=0,score=0,started=false,last=performance.now();
 function animate(now){
@@ -149,7 +137,6 @@ function animate(now){
    const turn=(keys.left?-1:0)+(keys.right?1:0);
    car.rotation.y += turn*speed*.018*dt;
    car.translateZ(-speed*dt*.18);
-   // keep in world
    car.position.x=Math.max(-118,Math.min(118,car.position.x));
    car.position.z=Math.max(-118,Math.min(118,car.position.z));
    camera.position.lerp(new THREE.Vector3(car.position.x,car.position.y+5.2,car.position.z+10).applyAxisAngle(new THREE.Vector3(0,1,0),car.rotation.y),.09);
@@ -162,12 +149,18 @@ function animate(now){
 camera.position.set(0,6,82);camera.lookAt(0,1,70);
 animate(performance.now());
 
+// إزالة شاشة التحميل فوراً عند جاهزية الصفحة
+window.addEventListener('load', () => {
+  document.getElementById("loading").classList.add("hidden");
+});
+
 document.getElementById("start").onclick=()=>{
- started=true;document.getElementById("menu").classList.add("hidden");document.getElementById("hint").style.opacity=.8;
+  started=true;
+  document.getElementById("menu").classList.add("hidden");
+  document.getElementById("hint").style.opacity=.8;
 };
 addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-
-setTimeout(()=>document.getElementById("loading").classList.add("hidden"),700);
 })();
 </script>
-</body></html>
+</body>
+</html>
